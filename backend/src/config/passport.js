@@ -6,16 +6,19 @@ const logger = require('../utils/logger');
 function configurePassport() {
   const appId = process.env.FACEBOOK_APP_ID;
   const appSecret = process.env.FACEBOOK_APP_SECRET;
-  const apiBaseUrl = process.env.API_BASE_URL || 'http://localhost:5000';
-
   if (!appId || !appSecret) {
     logger.warn('FACEBOOK_APP_ID or FACEBOOK_APP_SECRET not set. Facebook login will be unavailable.');
     return;
   }
 
+  // Auto-detect public URL: API_BASE_URL > Render hostname > fallback
+  const publicUrl = process.env.API_BASE_URL
+    || (process.env.RENDER_EXTERNAL_HOSTNAME ? `https://${process.env.RENDER_EXTERNAL_HOSTNAME}` : null)
+    || `http://localhost:${process.env.PORT || 5000}`;
+
   const callbackURL =
     process.env.FACEBOOK_CALLBACK_URL ||
-    `${apiBaseUrl}/api/auth/facebook/callback`;
+    `${publicUrl}/api/auth/facebook/callback`;
 
   passport.use(
     new FacebookStrategy(

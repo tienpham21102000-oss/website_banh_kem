@@ -23,7 +23,7 @@ router.get('/me', authMiddleware, AuthController.getCurrentUser);
 
 // Facebook OAuth
 router.get('/facebook/status', (req, res) => {
-  const configured = !!(passport?._strategies?.facebook || passport?._strategy?.('facebook'));
+  const configured = !!passport?._strategies?.facebook;
   res.json({
     configured,
     message: configured
@@ -36,7 +36,7 @@ router.get(
   '/facebook/callback',
   ensureFacebookConfigured,
   passport.authenticate('facebook', {
-    failureRedirect: (process.env.FRONTEND_URL || 'http://localhost:5173') + '/auth/facebook/callback?error=facebook_auth_failed',
+    failureRedirect: (process.env.FRONTEND_URL || 'http://localhost:5173') + '?error=facebook_auth_failed',
   }),
   OAuthController.facebookCallback,
 );
