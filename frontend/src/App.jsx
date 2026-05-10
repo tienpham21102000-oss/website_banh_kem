@@ -15,7 +15,9 @@ import { getErrorMessage } from './utils/helpers'
 
 function App() {
   const adminEmail = import.meta.env.VITE_ADMIN_EMAIL || 'admin@banhkem.com'
-  const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
+  const apiBaseUrl =
+    import.meta.env.VITE_API_URL ||
+    (import.meta.env.PROD ? '/api' : 'http://localhost:5000/api')
   const enableAdminDemo = import.meta.env.DEV && (import.meta.env.VITE_ENABLE_ADMIN_DEMO === 'true')
   const [authMode, setAuthMode] = useState('login')
   const [authForm, setAuthForm] = useState({ email: '', password: '', phone: '' })
