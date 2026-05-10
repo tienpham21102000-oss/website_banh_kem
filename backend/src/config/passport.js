@@ -11,7 +11,7 @@ function configurePassport() {
     return;
   }
 
-  // Auto-detect public URL: API_BASE_URL > Render hostname > fallback
+  // Auto-detect public URL
   const publicUrl = process.env.API_BASE_URL
     || (process.env.RENDER_EXTERNAL_HOSTNAME ? `https://${process.env.RENDER_EXTERNAL_HOSTNAME}` : null)
     || `http://localhost:${process.env.PORT || 5000}`;
@@ -19,6 +19,8 @@ function configurePassport() {
   const callbackURL =
     process.env.FACEBOOK_CALLBACK_URL ||
     `${publicUrl}/api/auth/facebook/callback`;
+
+  logger.info(`Facebook OAuth configured with callback URL: ${callbackURL}`);
 
   passport.use(
     new FacebookStrategy(
