@@ -3,6 +3,7 @@ const AuthController = require('../controllers/AuthController');
 const OAuthController = require('../controllers/OAuthController');
 const { authMiddleware } = require('../middlewares/auth.middleware');
 const passport = require('passport');
+const logger = require('../utils/logger');
 
 const router = express.Router();
 
@@ -35,10 +36,18 @@ router.get('/facebook', ensureFacebookConfigured, passport.authenticate('faceboo
 router.get(
   '/facebook/callback',
   ensureFacebookConfigured,
-  passport.authenticate('facebook', {
-    failureRedirect: (process.env.FRONTEND_URL || 'http://localhost:5173') + '?error=facebook_auth_failed',
-  }),
-  OAuthController.facebookCallback,
+  function facebookCallbackHandler(req, res, next) {
+    passport.authenticate('facebook', {
+      failureRedirect: (process.env.FRONTEND_URL || 'http://localhost:5173') + '?error=facebook_auth_failed',
+    })(req, res, function(err) {
+      if (err) {
+        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+        logger.error(`Facebook auth error: ${err.message}`);
+        return res.redirect(frontendUrl + '?error=' + encodeURIComponent(err.message));
+      }
+      OAuthController.facebookCallback(req, res, next);
+    });
+  },
 );
 
 module.exports = router;
