@@ -13,6 +13,7 @@ const env = {
   DB_USER: process.env.DB_USER || 'banh_kem_user',
   DB_PASSWORD: process.env.DB_PASSWORD || 'banh_kem_password',
   DB_NAME: process.env.DB_NAME || 'banh_kem_db',
+  DATABASE_URL: process.env.DATABASE_URL || '',
 
   // Redis
   REDIS_HOST: process.env.REDIS_HOST || 'localhost',
@@ -34,6 +35,11 @@ const env = {
   // SendGrid
   SENDGRID_API_KEY: process.env.SENDGRID_API_KEY || '',
   SENDGRID_FROM_EMAIL: process.env.SENDGRID_FROM_EMAIL || 'noreply@banhkem.com',
+
+  // Facebook OAuth
+  FACEBOOK_APP_ID: process.env.FACEBOOK_APP_ID || '',
+  FACEBOOK_APP_SECRET: process.env.FACEBOOK_APP_SECRET || '',
+  FACEBOOK_CALLBACK_URL: process.env.FACEBOOK_CALLBACK_URL || '',
 
   // Features
   MIN_DELIVERY_ADVANCE_HOURS: parseInt(process.env.MIN_DELIVERY_ADVANCE_HOURS) || 48,

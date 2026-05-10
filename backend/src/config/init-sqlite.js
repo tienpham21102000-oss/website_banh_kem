@@ -164,4 +164,12 @@ async function init() {
   }
 }
 
-init();
+// Export the init function so it can be called from server.js
+const initSQLiteSchema = init;
+
+// Only auto-run if this file is executed directly
+if (require.main === module) {
+  init();
+}
+
+module.exports = { initSQLiteSchema };

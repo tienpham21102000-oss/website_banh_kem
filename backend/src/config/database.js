@@ -36,6 +36,12 @@ const query = (text, params = []) => {
   } else {
     // SQLite version of the query
     let sqliteQuery = text.replace(/\$(\d+)/g, '?').replace(/ILIKE/gi, 'LIKE');
+    
+    // Handle PostgreSQL ON CONFLICT for SQLite
+    // Convert: INSERT ... ON CONFLICT (...) DO NOTHING
+    // To: INSERT OR IGNORE ...
+    sqliteQuery = sqliteQuery.replace(/ON\s+CONFLICT\s*\([^)]*\)\s+DO\s+NOTHING/gi, 'OR IGNORE');
+    
     return new Promise((resolve, reject) => {
       const trimmedQuery = sqliteQuery.trim().toLowerCase();
       if (trimmedQuery.startsWith('select')) {

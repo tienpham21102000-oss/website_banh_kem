@@ -1,3 +1,6 @@
+// Ensure environment variables are loaded
+require('./config/env');
+
 const express = require('express');
 const helmet = require('helmet');
 const cors = require('cors');
