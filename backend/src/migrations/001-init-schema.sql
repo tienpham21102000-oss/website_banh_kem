@@ -6,7 +6,7 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- Users table
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   email VARCHAR(255) UNIQUE NOT NULL,
   phone VARCHAR(20) UNIQUE,
@@ -20,7 +20,7 @@ CREATE TABLE users (
 );
 
 -- User addresses
-CREATE TABLE user_addresses (
+CREATE TABLE IF NOT EXISTS user_addresses (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   address_line VARCHAR(255) NOT NULL,
@@ -36,7 +36,7 @@ CREATE TABLE user_addresses (
 );
 
 -- Categories
-CREATE TABLE categories (
+CREATE TABLE IF NOT EXISTS categories (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   name VARCHAR(255) NOT NULL,
   slug VARCHAR(255) UNIQUE NOT NULL,
@@ -50,7 +50,7 @@ CREATE TABLE categories (
 );
 
 -- Products
-CREATE TABLE products (
+CREATE TABLE IF NOT EXISTS products (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   sku VARCHAR(100) UNIQUE NOT NULL,
   name VARCHAR(255) NOT NULL,
@@ -65,7 +65,7 @@ CREATE TABLE products (
 );
 
 -- Product variants (sizes, toppings, etc.)
-CREATE TABLE product_variants (
+CREATE TABLE IF NOT EXISTS product_variants (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
   variant_sku VARCHAR(100) NOT NULL,
@@ -80,7 +80,7 @@ CREATE TABLE product_variants (
 );
 
 -- Orders
-CREATE TABLE orders (
+CREATE TABLE IF NOT EXISTS orders (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id UUID REFERENCES users(id) ON DELETE SET NULL,
   order_number VARCHAR(50) UNIQUE NOT NULL,
@@ -104,7 +104,7 @@ CREATE TABLE orders (
 );
 
 -- Order items
-CREATE TABLE order_items (
+CREATE TABLE IF NOT EXISTS order_items (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   order_id UUID NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
   product_variant_id UUID NOT NULL REFERENCES product_variants(id) ON DELETE RESTRICT,
@@ -116,7 +116,7 @@ CREATE TABLE order_items (
 );
 
 -- Payments
-CREATE TABLE payments (
+CREATE TABLE IF NOT EXISTS payments (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   order_id UUID NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
   gateway VARCHAR(50) NOT NULL, -- 'vnpay', 'momo', 'stripe'
@@ -134,7 +134,7 @@ CREATE TABLE payments (
 );
 
 -- Coupons
-CREATE TABLE coupons (
+CREATE TABLE IF NOT EXISTS coupons (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   code VARCHAR(100) UNIQUE NOT NULL,
   discount_type VARCHAR(50) NOT NULL, -- 'percentage', 'fixed'
@@ -150,7 +150,7 @@ CREATE TABLE coupons (
 );
 
 -- Coupon usage audit trail
-CREATE TABLE coupon_usages (
+CREATE TABLE IF NOT EXISTS coupon_usages (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   coupon_id UUID NOT NULL REFERENCES coupons(id) ON DELETE CASCADE,
   order_id UUID NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
@@ -159,7 +159,7 @@ CREATE TABLE coupon_usages (
 );
 
 -- Delivery window configuration
-CREATE TABLE delivery_window_config (
+CREATE TABLE IF NOT EXISTS delivery_window_config (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
   min_advance_hours INT DEFAULT 48,
@@ -170,7 +170,7 @@ CREATE TABLE delivery_window_config (
 );
 
 -- Blackout dates (holidays, shop closed)
-CREATE TABLE blackout_dates (
+CREATE TABLE IF NOT EXISTS blackout_dates (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   date_start TIMESTAMP NOT NULL,
   date_end TIMESTAMP NOT NULL,
@@ -180,24 +180,24 @@ CREATE TABLE blackout_dates (
 );
 
 -- Indexes for performance
-CREATE INDEX idx_users_email ON users(email);
-CREATE INDEX idx_users_phone ON users(phone);
-CREATE INDEX idx_user_addresses_user_id ON user_addresses(user_id);
-CREATE INDEX idx_products_category ON products(category_id);
-CREATE INDEX idx_products_status ON products(status);
-CREATE INDEX idx_product_variants_product ON product_variants(product_id);
-CREATE INDEX idx_orders_user ON orders(user_id);
-CREATE INDEX idx_orders_status ON orders(status);
-CREATE INDEX idx_orders_payment_status ON orders(payment_status);
-CREATE INDEX idx_orders_created ON orders(created_at DESC);
-CREATE INDEX idx_orders_requested_delivery ON orders(requested_delivery_date);
-CREATE INDEX idx_order_items_order ON order_items(order_id);
-CREATE INDEX idx_payments_order ON payments(order_id);
-CREATE INDEX idx_payments_gateway_tx ON payments(gateway, gateway_transaction_id);
-CREATE INDEX idx_coupons_code ON coupons(code);
-CREATE INDEX idx_coupons_status ON coupons(status);
-CREATE INDEX idx_coupon_usages_coupon ON coupon_usages(coupon_id);
-CREATE INDEX idx_coupon_usages_order ON coupon_usages(order_id);
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+CREATE INDEX IF NOT EXISTS idx_users_phone ON users(phone);
+CREATE INDEX IF NOT EXISTS idx_user_addresses_user_id ON user_addresses(user_id);
+CREATE INDEX IF NOT EXISTS idx_products_category ON products(category_id);
+CREATE INDEX IF NOT EXISTS idx_products_status ON products(status);
+CREATE INDEX IF NOT EXISTS idx_product_variants_product ON product_variants(product_id);
+CREATE INDEX IF NOT EXISTS idx_orders_user ON orders(user_id);
+CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status);
+CREATE INDEX IF NOT EXISTS idx_orders_payment_status ON orders(payment_status);
+CREATE INDEX IF NOT EXISTS idx_orders_created ON orders(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_orders_requested_delivery ON orders(requested_delivery_date);
+CREATE INDEX IF NOT EXISTS idx_order_items_order ON order_items(order_id);
+CREATE INDEX IF NOT EXISTS idx_payments_order ON payments(order_id);
+CREATE INDEX IF NOT EXISTS idx_payments_gateway_tx ON payments(gateway, gateway_transaction_id);
+CREATE INDEX IF NOT EXISTS idx_coupons_code ON coupons(code);
+CREATE INDEX IF NOT EXISTS idx_coupons_status ON coupons(status);
+CREATE INDEX IF NOT EXISTS idx_coupon_usages_coupon ON coupon_usages(coupon_id);
+CREATE INDEX IF NOT EXISTS idx_coupon_usages_order ON coupon_usages(order_id);
 CREATE INDEX idx_blackout_dates ON blackout_dates(date_start, date_end);
 
 -- Auto-update timestamp triggers

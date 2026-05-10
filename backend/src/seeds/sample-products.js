@@ -1,21 +1,23 @@
 require('../config/env');
 
 const pool = require('../config/database');
+const bcrypt = require('bcryptjs');
+const { v4: uuidv4 } = require('uuid');
 
 const categories = [
   {
     id: '11111111-1111-1111-1111-111111111111',
-    name: 'Banh Sinh Nhat',
+    name: 'Bánh Sinh Nhật',
     slug: 'banh-sinh-nhat',
-    description: 'Cac mau banh sinh nhat ban chay cho tiec gia dinh va cong ty.',
+    description: 'Các mẫu bánh sinh nhật bán chạy cho tiệc gia đình và công ty.',
     image_url: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587',
     display_order: 1,
   },
   {
     id: '22222222-2222-2222-2222-222222222222',
-    name: 'Banh Thiet Ke',
+    name: 'Bánh Thiết Kế',
     slug: 'banh-thiet-ke',
-    description: 'Banh kem thiet ke theo chu de, mau sac va thong diep rieng.',
+    description: 'Bánh kem thiết kế theo chủ đề, màu sắc và thông điệp riêng.',
     image_url: 'https://images.unsplash.com/photo-1464306076886-da185f6a9d05',
     display_order: 2,
   },
@@ -25,8 +27,8 @@ const products = [
   {
     id: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa1',
     sku: 'BK-BDAY-CHOC-001',
-    name: 'Banh Chocolate Sinh Nhat',
-    description: 'Cot banh chocolate mem, kem tuoi it ngot, phu chocolate ganache.',
+    name: 'Bánh Chocolate Sinh Nhật',
+    description: 'Cốt bánh chocolate mềm, kem tươi ít ngọt, phủ chocolate ganache.',
     category_id: categories[0].id,
     base_price: 320000,
     min_advance_hours: 48,
@@ -35,8 +37,8 @@ const products = [
   {
     id: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa2',
     sku: 'BK-FRESH-FRUIT-002',
-    name: 'Banh Trai Cay Tuoi',
-    description: 'Banh vani kem sua tuoi, phu dau tay, kiwi va nho xanh.',
+    name: 'Bánh Trái Cây Tươi',
+    description: 'Bánh vani kem sữa tươi, phủ dâu tây, kiwi và nho xanh.',
     category_id: categories[0].id,
     base_price: 360000,
     min_advance_hours: 48,
@@ -45,8 +47,8 @@ const products = [
   {
     id: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa3',
     sku: 'BK-CUSTOM-PASTEL-003',
-    name: 'Banh Pastel Thiet Ke',
-    description: 'Mau pastel nhe, phu hop tiec sinh nhat, baby shower va party nho.',
+    name: 'Bánh Pastel Thiết Kế',
+    description: 'Màu pastel nhẹ, phù hợp tiệc sinh nhật, baby shower và party nhỏ.',
     category_id: categories[1].id,
     base_price: 480000,
     min_advance_hours: 72,
@@ -291,11 +293,29 @@ async function seedCoupons(client) {
   }
 }
 
+async function seedAdminUser(client) {
+  const adminEmail = process.env.ADMIN_EMAIL || 'admin@banhkem.com';
+  const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
+
+  const exists = await client.query('SELECT id FROM users WHERE email = $1', [adminEmail]);
+  if (exists.rows.length > 0) return;
+
+  const passwordHash = await bcrypt.hash(adminPassword, 10);
+  await client.query(
+    `
+      INSERT INTO users (id, email, phone, password_hash, display_name, verified_email, verified_phone)
+      VALUES ($1, $2, $3, $4, $5, true, false)
+    `,
+    [uuidv4(), adminEmail, null, passwordHash, 'Quản trị viên'],
+  );
+}
+
 async function run() {
   const client = await pool.connect();
 
   try {
     await client.query('BEGIN');
+    await seedAdminUser(client);
     await seedCategories(client);
     await seedProducts(client);
     await seedVariants(client);

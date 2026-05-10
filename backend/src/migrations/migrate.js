@@ -5,6 +5,11 @@ const pool = require('../config/database');
 
 async function migrate() {
   try {
+    if (!process.env.DATABASE_URL) {
+      console.log('Skip migrations: DATABASE_URL chưa được cấu hình (đang dùng SQLite/local).');
+      process.exit(0);
+    }
+
     console.log('Starting database migrations...');
     
     const migrationsDir = path.join(__dirname);

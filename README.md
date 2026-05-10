@@ -45,5 +45,22 @@ Dự án đã hoàn tất các giai đoạn cốt lõi và đang trong trạng t
     *   `SESSION_SECRET`: Secret cho OAuth/session.
     *   `FACEBOOK_APP_ID`, `FACEBOOK_APP_SECRET`: Bật đăng nhập Facebook (tuỳ chọn).
 
+### Bật đăng nhập Facebook trên Render (domain thật)
+1. Tạo Facebook App (Meta for Developers) và lấy `FACEBOOK_APP_ID` + `FACEBOOK_APP_SECRET`.
+2. Trong Meta → Facebook Login → Settings:
+   - Valid OAuth Redirect URIs: `https://<service>.onrender.com/api/auth/facebook/callback`
+3. Trên Render → Environment:
+   - `FACEBOOK_APP_ID`, `FACEBOOK_APP_SECRET`
+   - `FRONTEND_URL=https://<service>.onrender.com`
+   - `API_BASE_URL=https://<service>.onrender.com`
+4. Redeploy service.
+
+### Khởi tạo Database trên Render (PostgreSQL)
+1. Render → tạo `PostgreSQL` và copy `DATABASE_URL` vào Web Service → Environment.
+2. Redeploy để app chạy với Postgres.
+3. Web Service → tab `Shell` (hoặc SSH) chạy 1 lần:
+   - `cd backend && npm run migrate`
+   - `cd backend && npm run seed`
+
 ---
 *Dự án được phát triển bởi Antigravity AI Assistant.*

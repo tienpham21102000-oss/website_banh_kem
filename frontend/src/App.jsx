@@ -16,6 +16,7 @@ import { getErrorMessage } from './utils/helpers'
 function App() {
   const adminEmail = import.meta.env.VITE_ADMIN_EMAIL || 'admin@banhkem.com'
   const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
+  const enableAdminDemo = import.meta.env.DEV && (import.meta.env.VITE_ENABLE_ADMIN_DEMO === 'true')
   const [authMode, setAuthMode] = useState('login')
   const [authForm, setAuthForm] = useState({ email: '', password: '', phone: '' })
   const [authLoading, setAuthLoading] = useState(false)
@@ -35,7 +36,7 @@ function App() {
 
     // Default Guest Session for "Open Access" deployment
     return {
-      token: 'guest-access-token',
+      token: null,
       refreshToken: null,
       user: { id: 'guest-user', email: 'guest@banhkem.com', role: 'customer' },
     }
@@ -81,7 +82,7 @@ function App() {
 
   const handleLogout = () => {
     logout()
-    setSession({ token: null, refreshToken: null, user: null })
+    setSession({ token: null, refreshToken: null, user: { id: 'guest-user', email: 'guest@banhkem.com', role: 'customer' } })
     toast.success('Đã đăng xuất')
   }
 
@@ -115,7 +116,7 @@ function App() {
                   <button type="button" className="ghost-button" onClick={handleLogout}>
                     Đăng xuất
                   </button>
-                  {session.user.email !== adminEmail && (
+                  {enableAdminDemo && session.user.email !== adminEmail && (
                     <button 
                       type="button" 
                       className="ghost-button" 
