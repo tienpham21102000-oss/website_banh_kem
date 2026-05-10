@@ -11,6 +11,9 @@ const { configurePassport } = require('./config/passport');
 
 const app = express();
 
+// Trust proxy (Render, Heroku, etc. - required for HTTPS behind reverse proxy)
+app.set('trust proxy', 1);
+
 // Middleware
 app.use(helmet());
 app.use(cors({

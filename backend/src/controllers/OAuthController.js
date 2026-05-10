@@ -2,10 +2,11 @@ const AuthService = require('../services/AuthService');
 const logger = require('../utils/logger');
 
 function getFrontendUrl(req) {
-  // If FRONTEND_URL is set, use it
-  if (process.env.FRONTEND_URL) return process.env.FRONTEND_URL;
+  // If FRONTEND_URL is set, use it (strip trailing slash)
+  if (process.env.FRONTEND_URL) return process.env.FRONTEND_URL.replace(/\/$/, '');
   // Otherwise detect from the incoming request (works on Render)
   if (req) {
+    // trust proxy:1 makes req.protocol reflect the X-Forwarded-Proto header
     const protocol = req.protocol || 'https';
     const host = req.get('host') || 'banh-kem.onrender.com';
     // If host is the backend API, the frontend is served at the same root
