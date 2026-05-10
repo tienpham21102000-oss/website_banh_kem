@@ -37,23 +37,12 @@ router.get(
   '/facebook/callback',
   ensureFacebookConfigured,
   function facebookCallbackHandler(req, res, next) {
-    // Auto-detect frontend URL from request
-    const getFrontendUrl = () => {
-      if (process.env.FRONTEND_URL) return process.env.FRONTEND_URL.replace(/\/$/, '');
-      // Force https in production (Render uses reverse proxy)
-      const protocol = process.env.NODE_ENV === 'production' ? 'https' : (req.protocol || 'http');
-      const host = req.get('host') || 'banh-kem.onrender.com';
-      return `${protocol}://${host}`;
-    };
-
-    const frontendUrl = getFrontendUrl();
-
     passport.authenticate('facebook', {
-      failureRedirect: frontendUrl + '?error=facebook_auth_failed',
+      failureRedirect: '/?error=facebook_auth_failed',
     })(req, res, function(err) {
       if (err) {
         logger.error(`Facebook auth error: ${err.message}`);
-        return res.redirect(frontendUrl + '?error=' + encodeURIComponent(err.message));
+        return res.redirect('/?error=' + encodeURIComponent(err.message));
       }
       OAuthController.facebookCallback(req, res, next);
     });
