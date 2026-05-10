@@ -169,6 +169,18 @@ CREATE TABLE IF NOT EXISTS delivery_window_config (
   UNIQUE (product_id)
 );
 
+-- OAuth accounts (facebook/google/etc.)
+CREATE TABLE IF NOT EXISTS oauth_accounts (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  provider VARCHAR(50) NOT NULL,
+  provider_user_id VARCHAR(255) NOT NULL,
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE (provider, provider_user_id),
+  UNIQUE (provider, user_id)
+);
+
 -- Blackout dates (holidays, shop closed)
 CREATE TABLE IF NOT EXISTS blackout_dates (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
