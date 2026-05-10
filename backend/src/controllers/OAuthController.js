@@ -6,10 +6,9 @@ function getFrontendUrl(req) {
   if (process.env.FRONTEND_URL) return process.env.FRONTEND_URL.replace(/\/$/, '');
   // Otherwise detect from the incoming request (works on Render)
   if (req) {
-    // trust proxy:1 makes req.protocol reflect the X-Forwarded-Proto header
-    const protocol = req.protocol || 'https';
+    // Force https in production (Render uses reverse proxy)
+    const protocol = process.env.NODE_ENV === 'production' ? 'https' : (req.protocol || 'http');
     const host = req.get('host') || 'banh-kem.onrender.com';
-    // If host is the backend API, the frontend is served at the same root
     return `${protocol}://${host}`;
   }
   return 'https://banh-kem.onrender.com';

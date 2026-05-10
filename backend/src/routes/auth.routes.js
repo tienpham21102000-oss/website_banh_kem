@@ -40,7 +40,8 @@ router.get(
     // Auto-detect frontend URL from request
     const getFrontendUrl = () => {
       if (process.env.FRONTEND_URL) return process.env.FRONTEND_URL.replace(/\/$/, '');
-      const protocol = req.protocol || 'https';
+      // Force https in production (Render uses reverse proxy)
+      const protocol = process.env.NODE_ENV === 'production' ? 'https' : (req.protocol || 'http');
       const host = req.get('host') || 'banh-kem.onrender.com';
       return `${protocol}://${host}`;
     };
