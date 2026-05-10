@@ -1,12 +1,21 @@
 const AuthService = require('../services/AuthService');
 const logger = require('../utils/logger');
 
-function getFrontendUrl() {
-  return process.env.FRONTEND_URL || 'http://localhost:5173';
+function getFrontendUrl(req) {
+  // If FRONTEND_URL is set, use it
+  if (process.env.FRONTEND_URL) return process.env.FRONTEND_URL;
+  // Otherwise detect from the incoming request (works on Render)
+  if (req) {
+    const protocol = req.protocol || 'https';
+    const host = req.get('host') || 'banh-kem.onrender.com';
+    // If host is the backend API, the frontend is served at the same root
+    return `${protocol}://${host}`;
+  }
+  return 'https://banh-kem.onrender.com';
 }
 
-function buildRedirectUrl({ token, refreshToken, error }) {
-  const base = `${getFrontendUrl()}/auth/facebook/callback`;
+function buildRedirectUrl(req, { token, refreshToken, error }) {
+  const base = `${getFrontendUrl(req)}/auth/facebook/callback`;
   const params = new URLSearchParams();
   if (token) params.set('token', token);
   if (refreshToken) params.set('refreshToken', refreshToken);
@@ -18,16 +27,16 @@ async function facebookCallback(req, res) {
   try {
     const user = req.user;
     if (!user) {
-      return res.redirect(buildRedirectUrl({ error: 'Đăng nhập Facebook thất bại. Vui lòng thử lại.' }));
+      return res.redirect(buildRedirectUrl(req, { error: 'Đăng nhập Facebook thất bại. Vui lòng thử lại.' }));
     }
 
     const token = AuthService.generateToken(user.id);
     const refreshToken = AuthService.generateRefreshToken(user.id);
 
-    return res.redirect(buildRedirectUrl({ token, refreshToken }));
+    return res.redirect(buildRedirectUrl(req, { token, refreshToken }));
   } catch (error) {
     logger.warn(`Facebook callback error: ${error.message}`);
-    return res.redirect(buildRedirectUrl({ error: 'Không thể xử lý đăng nhập Facebook. Vui lòng thử lại.' }));
+    return res.redirect(buildRedirectUrl(req, { error: 'Không thể xử lý đăng nhập Facebook. Vui lòng thử lại.' }));
   }
 }
 

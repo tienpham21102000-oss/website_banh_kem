@@ -37,11 +37,20 @@ router.get(
   '/facebook/callback',
   ensureFacebookConfigured,
   function facebookCallbackHandler(req, res, next) {
+    // Auto-detect frontend URL from request
+    const getFrontendUrl = () => {
+      if (process.env.FRONTEND_URL) return process.env.FRONTEND_URL.replace(/\/$/, '');
+      const protocol = req.protocol || 'https';
+      const host = req.get('host') || 'banh-kem.onrender.com';
+      return `${protocol}://${host}`;
+    };
+
+    const frontendUrl = getFrontendUrl();
+
     passport.authenticate('facebook', {
-      failureRedirect: (process.env.FRONTEND_URL || 'http://localhost:5173') + '?error=facebook_auth_failed',
+      failureRedirect: frontendUrl + '?error=facebook_auth_failed',
     })(req, res, function(err) {
       if (err) {
-        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
         logger.error(`Facebook auth error: ${err.message}`);
         return res.redirect(frontendUrl + '?error=' + encodeURIComponent(err.message));
       }
