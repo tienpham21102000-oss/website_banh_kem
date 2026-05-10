@@ -1,29 +1,31 @@
 // Load environment variables FIRST
 const env = require('./config/env');
 const logger = require('./utils/logger');
+const fs = require('fs');
+const path = require('path');
+
+async function runAutoMigrations() {
+  const { query } = require('./config/database');
+  const migrationsDir = __dirname + '/migrations';
+  const files = fs.readdirSync(migrationsDir)
+    .filter(f => f.endsWith('.sql'))
+    .sort();
+
+  for (const file of files) {
+    const sql = fs.readFileSync(path.join(migrationsDir, file), 'utf8');
+    try {
+      await query(sql);
+      logger.info(`Migration ${file} completed`);
+    } catch (err) {
+      logger.warn(`Migration ${file} skipped (may already exist): ${err.message}`);
+    }
+  }
+}
 
 async function startServer() {
-  try {
-    // Ensure oauth_accounts table exists BEFORE passport/AuthService is loaded
-    const { query } = require('./config/database');
-    await query(`
-      CREATE TABLE IF NOT EXISTS oauth_accounts (
-        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-        provider VARCHAR(50) NOT NULL,
-        provider_user_id VARCHAR(255) NOT NULL,
-        user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        UNIQUE (provider, provider_user_id),
-        UNIQUE (provider, user_id)
-      )
-    `);
-    logger.info('Ensured oauth_accounts table exists');
-  } catch (error) {
-    logger.debug('oauth_accounts table check: ' + error.message);
-  }
+  await runAutoMigrations();
 
-  // Now load app (passport/AuthService will find the table)
+  // Now load app (passport/AuthService will find the tables)
   const app = require('./app');
   const PORT = env.PORT;
 
