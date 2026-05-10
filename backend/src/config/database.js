@@ -1,4 +1,3 @@
-const sqlite3 = require('sqlite3').verbose();
 const { Pool } = require('pg');
 const path = require('path');
 const logger = require('../utils/logger');
@@ -17,6 +16,10 @@ if (isProduction) {
     }
   });
 } else {
+  // IMPORTANT: Lazy-require sqlite3 only in dev/local mode.
+  // On some Linux environments (e.g. Render) loading sqlite3 native bindings can fail
+  // due to GLIBC version mismatches. We avoid loading it when DATABASE_URL is provided.
+  const sqlite3 = require('sqlite3').verbose();
   const dbPath = path.resolve(__dirname, '../../database.sqlite');
   logger.info('Using SQLite database at: ' + dbPath);
   sqliteDb = new sqlite3.Database(dbPath, (err) => {
