@@ -1,18 +1,18 @@
-// Migration helper - runs SQL migrations on startup
 const fs = require('fs');
 const path = require('path');
 const pool = require('../config/database');
+const logger = require('../utils/logger');
 
 async function migrate() {
   try {
     if (!process.env.DATABASE_URL) {
-      console.log('Skip migrations: DATABASE_URL chưa được cấu hình (đang dùng SQLite/local).');
-      process.exit(0);
+      console.error('Error: DATABASE_URL is required. Please set PostgreSQL connection string.');
+      process.exit(1);
     }
 
     console.log('Starting database migrations...');
     
-    const migrationsDir = path.join(__dirname);
+    const migrationsDir = __dirname;
     const files = fs.readdirSync(migrationsDir)
       .filter(f => f.endsWith('.sql'))
       .sort();

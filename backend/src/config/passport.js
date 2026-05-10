@@ -1,22 +1,21 @@
 const passport = require('passport');
 const FacebookStrategy = require('passport-facebook').Strategy;
 const AuthService = require('../services/AuthService');
-
-function ensureEnv(name) {
-  const value = process.env[name];
-  if (!value) {
-    throw new Error(`Missing required env var: ${name}`);
-  }
-  return value;
-}
+const logger = require('../utils/logger');
 
 function configurePassport() {
-  const appId = ensureEnv('FACEBOOK_APP_ID');
-  const appSecret = ensureEnv('FACEBOOK_APP_SECRET');
+  const appId = process.env.FACEBOOK_APP_ID;
+  const appSecret = process.env.FACEBOOK_APP_SECRET;
+  const apiBaseUrl = process.env.API_BASE_URL || 'http://localhost:5000';
+
+  if (!appId || !appSecret) {
+    logger.warn('FACEBOOK_APP_ID or FACEBOOK_APP_SECRET not set. Facebook login will be unavailable.');
+    return;
+  }
 
   const callbackURL =
     process.env.FACEBOOK_CALLBACK_URL ||
-    `${process.env.API_BASE_URL || 'http://localhost:5000'}/api/auth/facebook/callback`;
+    `${apiBaseUrl}/api/auth/facebook/callback`;
 
   passport.use(
     new FacebookStrategy(

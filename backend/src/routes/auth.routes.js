@@ -7,7 +7,8 @@ const passport = require('passport');
 const router = express.Router();
 
 function ensureFacebookConfigured(req, res, next) {
-  if (!passport?._strategy?.('facebook') && !passport?._strategies?.facebook) {
+  const fbStrategy = passport?._strategies?.facebook;
+  if (!fbStrategy) {
     return res.status(503).json({
       error: 'Chưa cấu hình đăng nhập Facebook. Vui lòng thiết lập FACEBOOK_APP_ID và FACEBOOK_APP_SECRET ở backend.',
     });
