@@ -59,7 +59,7 @@ async function init() {
       CREATE TABLE IF NOT EXISTS users (
         id TEXT PRIMARY KEY,
         email TEXT UNIQUE NOT NULL,
-        password_hash TEXT NOT NULL,
+        password_hash TEXT,
         display_name TEXT,
         phone TEXT,
         verified_email BOOLEAN DEFAULT 0,
@@ -67,6 +67,20 @@ async function init() {
         loyalty_points INTEGER DEFAULT 0,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // OAuth accounts (facebook/google/...) - optional for SQLite dev
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS oauth_accounts (
+        id TEXT PRIMARY KEY,
+        provider TEXT NOT NULL,
+        provider_user_id TEXT NOT NULL,
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE (provider, provider_user_id),
+        UNIQUE (provider, user_id)
       )
     `);
 

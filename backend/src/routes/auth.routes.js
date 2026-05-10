@@ -30,7 +30,7 @@ router.get('/facebook/status', (req, res) => {
       : 'Chưa cấu hình đăng nhập Facebook. Vui lòng thiết lập FACEBOOK_APP_ID và FACEBOOK_APP_SECRET ở backend.',
   });
 });
-router.get('/facebook', ensureFacebookConfigured, passport.authenticate('facebook', { scope: ['email'] }));
+router.get('/facebook', ensureFacebookConfigured, passport.authenticate('facebook'));
 router.get(
   '/facebook/callback',
   ensureFacebookConfigured,

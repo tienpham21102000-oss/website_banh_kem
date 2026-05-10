@@ -191,13 +191,20 @@ class AuthService {
    */
   async findOrCreateOAuthUser({ email, displayName, provider, providerUserId }) {
     try {
-      const existing = await pool.query(
-        'SELECT id, email, phone, display_name, verified_email, verified_phone FROM users WHERE email = $1',
-        [email],
+      // 1) Prefer mapping by provider identity (stable, doesn't depend on email permission)
+      const byProvider = await pool.query(
+        `
+          SELECT u.id, u.email, u.phone, u.display_name, u.verified_email, u.verified_phone
+          FROM oauth_accounts oa
+          JOIN users u ON u.id = oa.user_id
+          WHERE oa.provider = $1 AND oa.provider_user_id = $2
+          LIMIT 1
+        `,
+        [provider, providerUserId],
       );
 
-      if (existing.rows.length > 0) {
-        const user = existing.rows[0];
+      if (byProvider.rows.length > 0) {
+        const user = byProvider.rows[0];
         return {
           id: user.id,
           email: user.email,
@@ -210,13 +217,57 @@ class AuthService {
         };
       }
 
+      // 2) If we got a real email, try linking to an existing user by email
+      if (email) {
+        const existingByEmail = await pool.query(
+          'SELECT id, email, phone, display_name, verified_email, verified_phone FROM users WHERE email = $1 LIMIT 1',
+          [email],
+        );
+
+        if (existingByEmail.rows.length > 0) {
+          const user = existingByEmail.rows[0];
+          await pool.query(
+            `
+              INSERT INTO oauth_accounts (id, provider, provider_user_id, user_id)
+              VALUES ($1, $2, $3, $4)
+              ON CONFLICT (provider, provider_user_id) DO NOTHING
+            `,
+            [uuidv4(), provider, providerUserId, user.id],
+          );
+
+          return {
+            id: user.id,
+            email: user.email,
+            phone: user.phone,
+            displayName: user.display_name,
+            verifiedEmail: user.verified_email,
+            verifiedPhone: user.verified_phone,
+            provider,
+            providerUserId,
+          };
+        }
+      }
+
+      // 3) Create new user and link oauth identity
       const userId = uuidv4();
       const query = `
         INSERT INTO users (id, email, phone, password_hash, display_name, verified_email)
         VALUES ($1, $2, $3, $4, $5, $6)
       `;
 
-      await pool.query(query, [userId, email, null, null, displayName || email.split('@')[0], true]);
+      const finalEmail = email || `${provider}_${providerUserId}@noemail.local`;
+      const finalDisplayName = displayName || (finalEmail ? finalEmail.split('@')[0] : 'Khách hàng');
+
+      await pool.query(query, [userId, finalEmail, null, null, finalDisplayName, email ? true : false]);
+
+      await pool.query(
+        `
+          INSERT INTO oauth_accounts (id, provider, provider_user_id, user_id)
+          VALUES ($1, $2, $3, $4)
+          ON CONFLICT (provider, provider_user_id) DO NOTHING
+        `,
+        [uuidv4(), provider, providerUserId, userId],
+      );
 
       const created = await pool.query(
         'SELECT id, email, phone, display_name, verified_email, verified_phone FROM users WHERE id = $1',

@@ -24,20 +24,15 @@ function configurePassport() {
         clientID: appId,
         clientSecret: appSecret,
         callbackURL,
-        profileFields: ['id', 'displayName', 'emails'],
+        profileFields: ['id', 'displayName'],
       },
       async (_accessToken, _refreshToken, profile, done) => {
         try {
-          const email = profile?.emails?.[0]?.value || null;
-          if (!email) {
-            return done(
-              null,
-              null,
-              new Error('Tài khoản Facebook chưa cấp quyền Email. Vui lòng cho phép truy cập Email và thử lại.'),
-            );
-          }
-
-          const displayName = profile.displayName || email.split('@')[0];
+          const rawEmail = profile?.emails?.[0]?.value || null;
+          // Some Facebook accounts/apps may not return email (or the email permission is ignored).
+          // To keep the ordering flow working, fall back to a synthetic email based on Facebook user id.
+          const email = rawEmail || `facebook_${profile.id}@noemail.local`;
+          const displayName = profile.displayName || (rawEmail ? rawEmail.split('@')[0] : `Facebook User ${profile.id}`);
           const user = await AuthService.findOrCreateOAuthUser({
             email,
             displayName,
@@ -59,4 +54,3 @@ function configurePassport() {
 }
 
 module.exports = { configurePassport };
-
