@@ -6,6 +6,11 @@ const logger = require('../utils/logger');
 function configurePassport() {
   const appId = process.env.FACEBOOK_APP_ID;
   const appSecret = process.env.FACEBOOK_APP_SECRET;
+
+  // Always configure serialize/deserialize regardless of Facebook config
+  passport.serializeUser((user, done) => done(null, user?.id || null));
+  passport.deserializeUser((id, done) => done(null, id ? { id } : null));
+
   if (!appId || !appSecret) {
     logger.warn('FACEBOOK_APP_ID or FACEBOOK_APP_SECRET not set. Facebook login will be unavailable.');
     return;
@@ -28,7 +33,10 @@ function configurePassport() {
         clientID: appId,
         clientSecret: appSecret,
         callbackURL,
-        profileFields: ['id', 'displayName'],
+        profileFields: ['id', 'displayName', 'emails'],
+        scope: ['email'],
+        authType: 'rerequest',
+        enableProof: true,
       },
       async (_accessToken, _refreshToken, profile, done) => {
         try {
@@ -50,9 +58,6 @@ function configurePassport() {
       },
     ),
   );
-
-  passport.serializeUser((user, done) => done(null, user?.id || null));
-  passport.deserializeUser((id, done) => done(null, id ? { id } : null));
 
   return passport;
 }

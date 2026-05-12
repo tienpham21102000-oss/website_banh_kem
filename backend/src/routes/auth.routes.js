@@ -38,11 +38,11 @@ router.get(
   ensureFacebookConfigured,
   function facebookCallbackHandler(req, res, next) {
     passport.authenticate('facebook', {
-      failureRedirect: '/?error=facebook_auth_failed',
+      failureRedirect: '/auth/facebook/callback?error=facebook_auth_failed',
     })(req, res, function(err) {
       if (err) {
         logger.error(`Facebook auth error: ${err.message}`);
-        return res.redirect('/?error=' + encodeURIComponent(err.message));
+        return res.redirect('/auth/facebook/callback?error=' + encodeURIComponent(err.message));
       }
       OAuthController.facebookCallback(req, res, next);
     });

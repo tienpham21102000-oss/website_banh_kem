@@ -6,6 +6,8 @@ function buildRedirectUrl({ token, refreshToken, error }) {
   if (token) params.set('token', token);
   if (refreshToken) params.set('refreshToken', refreshToken);
   if (error) params.set('error', error);
+  // Redirect to frontend route — Express catch-all '*' will serve index.html
+  // React SPA will parse params via FacebookAuthCallback component
   return `/auth/facebook/callback?${params.toString()}`;
 }
 

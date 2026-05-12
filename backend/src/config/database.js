@@ -1,27 +1,36 @@
 const { Pool } = require('pg');
 const logger = require('../utils/logger');
 
-// Require PostgreSQL connection string
 const databaseUrl = process.env.DATABASE_URL;
-if (!databaseUrl) {
-  logger.error('DATABASE_URL is required. Set DATABASE_URL environment variable for PostgreSQL connection.');
-  process.exit(1);
+
+let pgPool = null;
+
+if (databaseUrl) {
+  logger.info('Using PostgreSQL for database connection');
+  // Only use SSL when DATABASE_URL contains 'sslmode=require' or in production
+  const useSSL = process.env.NODE_ENV === 'production' || process.env.PGSSLMODE === 'require';
+  pgPool = new Pool({
+    connectionString: databaseUrl,
+    ssl: useSSL ? { rejectUnauthorized: false } : false,
+  });
+} else {
+  logger.warn('DATABASE_URL not set. Database queries will throw an error until configured.');
 }
 
-logger.info('Using PostgreSQL for database connection');
-const pgPool = new Pool({
-  connectionString: databaseUrl,
-  ssl: {
-    rejectUnauthorized: false,
-  },
-});
-
-const query = (text, params = []) => {
+const query = async (text, params = []) => {
+  if (!pgPool) {
+    throw new Error('DATABASE_URL not configured. Please set the DATABASE_URL environment variable.');
+  }
   return pgPool.query(text, params);
 };
 
 module.exports = {
   query,
-  connect: async () => pgPool.connect(),
-  end: () => pgPool.end(),
+  connect: async () => {
+    if (!pgPool) throw new Error('DATABASE_URL not configured.');
+    return pgPool.connect();
+  },
+  end: async () => {
+    if (pgPool) await pgPool.end();
+  },
 };
