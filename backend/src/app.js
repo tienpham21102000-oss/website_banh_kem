@@ -76,7 +76,7 @@ app.use('/api/delivery', require('./routes/delivery.routes'));
 app.use('/api/admin', require('./routes/admin.routes'));
 
 // Serve Static Frontend in Production
-if (process.env.NODE_ENV === 'production' || true) { // Forced true for easier deployment testing
+if (process.env.NODE_ENV === 'production') {
   const frontendPath = path.join(__dirname, '../../frontend/dist');
   app.use(express.static(frontendPath));
   
