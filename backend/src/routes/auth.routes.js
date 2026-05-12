@@ -32,7 +32,9 @@ router.get('/facebook/status', (req, res) => {
       : 'Chưa cấu hình đăng nhập Facebook. Vui lòng thiết lập FACEBOOK_APP_ID và FACEBOOK_APP_SECRET ở backend.',
   });
 });
-router.get('/facebook', ensureFacebookConfigured, passport.authenticate('facebook'));
+router.get('/facebook', ensureFacebookConfigured, (req, res, next) => {
+  passport.authenticate('facebook', { scope: ['public_profile'] })(req, res, next);
+});
 router.get(
   '/facebook/callback',
   function facebookErrorHandler(req, res, next) {
