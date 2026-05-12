@@ -35,14 +35,26 @@ router.get('/facebook/status', (req, res) => {
 router.get('/facebook', ensureFacebookConfigured, passport.authenticate('facebook'));
 router.get(
   '/facebook/callback',
+  function facebookErrorHandler(req, res, next) {
+    // If there's already an error parameter (from a previous failed attempt),
+    // skip passport and redirect to frontend with the error
+    if (req.query.error) {
+      return res.redirect('/?error=' + encodeURIComponent(req.query.error));
+    }
+    // Skip passport authenticate if there's no code (e.g. direct browser access)
+    if (!req.query.code) {
+      return res.redirect('/?error=no_authorization_code');
+    }
+    next();
+  },
   ensureFacebookConfigured,
   function facebookCallbackHandler(req, res, next) {
     passport.authenticate('facebook', {
-      failureRedirect: '/auth/facebook/callback?error=facebook_auth_failed',
+      failureRedirect: '/?error=facebook_auth_failed',
     })(req, res, function(err) {
       if (err) {
-        logger.error(`Facebook auth error: ${err.message}`);
-        return res.redirect('/auth/facebook/callback?error=' + encodeURIComponent(err.message));
+        logger.error(`Facebook auth error: ${err.message}, stack: ${err.stack}`);
+        return res.redirect('/?error=' + encodeURIComponent(err.message));
       }
       OAuthController.facebookCallback(req, res, next);
     });
