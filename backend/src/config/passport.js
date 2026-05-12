@@ -33,10 +33,7 @@ function configurePassport() {
         clientID: appId,
         clientSecret: appSecret,
         callbackURL,
-        profileFields: ['id', 'displayName', 'emails'],
-        scope: ['email'],
-        authType: 'rerequest',
-        enableProof: true,
+        profileFields: ['id', 'displayName'],
       },
       async (_accessToken, _refreshToken, profile, done) => {
         try {
