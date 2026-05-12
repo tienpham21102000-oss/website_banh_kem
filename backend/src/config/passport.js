@@ -33,8 +33,8 @@ function configurePassport() {
         clientID: appId,
         clientSecret: appSecret,
         callbackURL,
-        profileFields: ['id', 'displayName', 'email'],
-        scope: ['public_profile'],
+        profileFields: ['id', 'displayName'],
+        scope: [],
       },
       async (accessToken, refreshToken, profile, done) => {
         try {
