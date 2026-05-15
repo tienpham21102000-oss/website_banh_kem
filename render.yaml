@@ -1,0 +1,64 @@
+## render.yaml — Cấu hình tự động cho Render.com
+## Tài liệu: https://render.com/docs/infrastructure-as-code
+
+services:
+  - type: web
+    name: banh-kem
+    runtime: node
+    region: singapore
+    plan: free
+    branch: main
+
+    buildCommand: npm run install:all && npm run build:frontend
+    startCommand: npm start
+
+    envVars:
+      - key: NODE_ENV
+        value: production
+
+      # Database — tự động lấy từ DB bên dưới
+      - key: DATABASE_URL
+        fromDatabase:
+          name: banh-kem-db
+          property: connectionString
+      - key: PGSSLMODE
+        value: require
+
+      # JWT & Session secrets — Render tự sinh ngẫu nhiên
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: SESSION_SECRET
+        generateValue: true
+
+      # URL công khai của service — THAY <banh-kem> bằng tên service thực tế của bạn
+      - key: API_BASE_URL
+        value: https://banh-kem.onrender.com
+      - key: FRONTEND_URL
+        value: https://banh-kem.onrender.com
+
+      # VNPay (demo/sandbox)
+      - key: VNPAY_TMN_CODE
+        value: DEMO_CODE
+      - key: VNPAY_HASH_SECRET
+        value: DEMO_SECRET
+      - key: VNPAY_RETURN_URL
+        value: https://banh-kem.onrender.com/checkout/return
+
+      # Admin mặc định
+      - key: ADMIN_EMAIL
+        value: admin@banhkem.com
+
+      # Facebook OAuth — ĐẶT THỦ CÔNG trong Render Dashboard
+      # (không commit App Secret lên git)
+      # - key: FACEBOOK_APP_ID
+      #   value: YOUR_APP_ID
+      # - key: FACEBOOK_APP_SECRET
+      #   value: YOUR_APP_SECRET
+
+databases:
+  - name: banh-kem-db
+    databaseName: banh_kem_db
+    plan: free
+    region: singapore

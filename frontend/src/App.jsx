@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { BrowserRouter, Link, NavLink, Route, Routes } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { BrowserRouter, Link, NavLink, Route, Routes, useLocation } from 'react-router-dom'
 import { Toaster, toast } from 'react-hot-toast'
 import './App.css'
 import CatalogPage from './pages/Catalog'
@@ -12,6 +12,28 @@ import { login, logout, register } from './api/authAPI'
 import OrderHistoryPage from './pages/OrderHistory'
 import FacebookAuthCallback from './pages/FacebookAuthCallback'
 import { getErrorMessage } from './utils/helpers'
+
+// Hiển thị toast error khi Facebook OAuth redirect về với ?error=...
+function OAuthErrorHandler() {
+  const location = useLocation()
+  useEffect(() => {
+    const params = new URLSearchParams(location.search)
+    const error = params.get('error')
+    if (error && error !== 'null') {
+      const msg = decodeURIComponent(error)
+      toast.error(msg === 'facebook_auth_failed'
+        ? 'Đăng nhập Facebook thất bại. Vui lòng thử lại.'
+        : msg === 'no_authorization_code'
+          ? 'Không nhận được mã xác thực từ Facebook.'
+          : `Lỗi đăng nhập: ${msg}`,
+        { duration: 5000 }
+      )
+      // Xoá query param khỏi URL mà không reload trang
+      window.history.replaceState({}, '', location.pathname)
+    }
+  }, [location.search])
+  return null
+}
 
 function App() {
   const adminEmail = import.meta.env.VITE_ADMIN_EMAIL || 'admin@banhkem.com'
@@ -90,6 +112,7 @@ function App() {
 
   return (
     <BrowserRouter>
+      <OAuthErrorHandler />
       <div className="app-shell">
         <header className="topbar">
           <div className="brand-block">
