@@ -113,7 +113,7 @@ class OrderService {
 
         const itemQuery = `
           INSERT INTO order_items (
-            id, order_id, variant_id, product_name,
+            id, order_id, product_variant_id, product_name,
             quantity, unit_price, subtotal
           )
           VALUES ($1, $2, $3, $4, $5, $6, $7)
@@ -168,7 +168,7 @@ class OrderService {
       const itemsQuery = `
         SELECT oi.*, pv.size, pv.topping, pv.color
         FROM order_items oi
-        JOIN product_variants pv ON oi.variant_id = pv.id
+        JOIN product_variants pv ON oi.product_variant_id = pv.id
         WHERE oi.order_id = $1
       `;
       const itemsResult = await pool.query(itemsQuery, [orderId]);
@@ -268,7 +268,7 @@ class OrderService {
       const order = orderResult.rows[0];
 
       // Reserve inventory for all items
-      const itemsQuery = 'SELECT variant_id, quantity FROM order_items WHERE order_id = $1';
+      const itemsQuery = 'SELECT product_variant_id, quantity FROM order_items WHERE order_id = $1';
       const itemsResult = await client.query(itemsQuery, [orderId]);
 
       for (const item of itemsResult.rows) {
@@ -277,7 +277,7 @@ class OrderService {
           SET stock_quantity = stock_quantity - $1
           WHERE id = $2
         `;
-        await client.query(reserveQuery, [item.quantity, item.variant_id]);
+        await client.query(reserveQuery, [item.quantity, item.product_variant_id]);
       }
 
       // Track coupon usage if applied
