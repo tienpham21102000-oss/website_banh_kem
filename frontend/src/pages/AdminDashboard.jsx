@@ -660,6 +660,95 @@ export default function AdminDashboard({ session, adminEmail }) {
           )}
         </main>
       </div>
+
+      {/* Order detail modal */}
+      {selectedOrder && (
+        <div
+          onClick={() => setSelectedOrder(null)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{ background: 'white', borderRadius: '24px', padding: '36px', width: '100%', maxWidth: '620px', maxHeight: '85vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
+              <div>
+                <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.5rem', margin: 0 }}>#{selectedOrder.order_number}</h2>
+                <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                  {new Date(selectedOrder.created_at).toLocaleString('vi-VN')}
+                </div>
+              </div>
+              <button onClick={() => setSelectedOrder(null)} style={{ background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: '#94a3b8', lineHeight: 1 }}>✕</button>
+            </div>
+
+            {/* Shipping info */}
+            <section style={{ marginBottom: '24px', background: '#f8fafc', borderRadius: '16px', padding: '20px' }}>
+              <h4 style={{ margin: '0 0 12px', fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)' }}>Thông tin giao hàng</h4>
+              {selectedOrder.shipping_address ? (
+                <div style={{ display: 'grid', gap: '6px', fontSize: '0.95rem' }}>
+                  <div><strong>Người nhận:</strong> {selectedOrder.shipping_address.recipientName}</div>
+                  <div><strong>Điện thoại:</strong> {selectedOrder.shipping_address.phone}</div>
+                  <div><strong>Địa chỉ:</strong> {selectedOrder.shipping_address.addressLine}{selectedOrder.shipping_address.district ? ', ' + selectedOrder.shipping_address.district : ''}{selectedOrder.shipping_address.province ? ', ' + selectedOrder.shipping_address.province : ''}</div>
+                  {selectedOrder.delivery_date && <div><strong>Ngày nhận:</strong> {selectedOrder.delivery_date} {selectedOrder.delivery_time && `— ${selectedOrder.delivery_time}`}</div>}
+                  {selectedOrder.shipping_method && <div><strong>Vận chuyển:</strong> {selectedOrder.shipping_method === 'express' ? 'Hỏa tốc' : 'Tiêu chuẩn'}</div>}
+                </div>
+              ) : (
+                <div style={{ color: 'var(--text-muted)' }}>Không có thông tin địa chỉ</div>
+              )}
+              {selectedOrder.custom_notes && (
+                <div style={{ marginTop: '10px', padding: '10px', background: '#fff9e6', borderRadius: '8px', fontSize: '0.9rem' }}>
+                  <strong>Ghi chú:</strong> {selectedOrder.custom_notes}
+                </div>
+              )}
+            </section>
+
+            {/* Order items */}
+            <section style={{ marginBottom: '24px' }}>
+              <h4 style={{ margin: '0 0 12px', fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)' }}>Sản phẩm</h4>
+              <div style={{ display: 'grid', gap: '10px' }}>
+                {(selectedOrder.items || []).map((item, idx) => (
+                  <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', border: '1px solid #f1f5f9', borderRadius: '12px' }}>
+                    <div>
+                      <div style={{ fontWeight: 600 }}>{item.product_name}</div>
+                      <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                        {[item.size, item.topping, item.color].filter(Boolean).join(' · ')} × {item.quantity}
+                      </div>
+                    </div>
+                    <strong style={{ color: 'var(--accent)' }}>{formatCurrency(item.subtotal)}</strong>
+                  </div>
+                ))}
+                {(!selectedOrder.items || selectedOrder.items.length === 0) && (
+                  <div style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>Không có dữ liệu sản phẩm</div>
+                )}
+              </div>
+            </section>
+
+            {/* Totals */}
+            <section style={{ borderTop: '1px solid #f1f5f9', paddingTop: '16px', display: 'grid', gap: '8px' }}>
+              {selectedOrder.discount_amount > 0 && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
+                  <span>Giảm giá{selectedOrder.coupon_code ? ` (${selectedOrder.coupon_code})` : ''}:</span>
+                  <span>- {formatCurrency(selectedOrder.discount_amount)}</span>
+                </div>
+              )}
+              {selectedOrder.shipping_fee > 0 && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
+                  <span>Phí vận chuyển:</span>
+                  <span>{formatCurrency(selectedOrder.shipping_fee)}</span>
+                </div>
+              )}
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 800, fontSize: '1.15rem', marginTop: '4px' }}>
+                <span>Tổng cộng:</span>
+                <span style={{ color: 'var(--accent)' }}>{formatCurrency(selectedOrder.total_amount)}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                <span>Thanh toán:</span>
+                <span>{selectedOrder.payment_method === 'cod' ? 'COD (thu khi giao)' : selectedOrder.payment_method}</span>
+              </div>
+            </section>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
