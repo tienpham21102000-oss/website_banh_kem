@@ -107,7 +107,7 @@ class AuthService {
   /**
    * Generate JWT token
    */
-  generateToken(userId, expiresIn = process.env.JWT_EXPIRES_IN) {
+  generateToken(userId, expiresIn = process.env.JWT_EXPIRES_IN || '24h') {
     try {
       const token = jwt.sign(
         { userId },
@@ -129,7 +129,7 @@ class AuthService {
       const token = jwt.sign(
         { userId },
         process.env.JWT_REFRESH_SECRET,
-        { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN }
+        { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d' }
       );
       return token;
     } catch (error) {
