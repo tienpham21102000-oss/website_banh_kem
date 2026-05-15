@@ -18,10 +18,10 @@ class DeliveryWindowService {
 
       const minAdvanceHours = productResult.rows[0].min_advance_hours;
 
-      // Get blackout dates
+      // Get blackout dates (PostgreSQL syntax)
       const blackoutQuery = `
         SELECT date_start, date_end FROM blackout_dates
-        WHERE date_start <= datetime('now', '+90 days')
+        WHERE date_start <= NOW() + INTERVAL '90 days'
         ORDER BY date_start ASC
       `;
       const blackoutResult = await pool.query(blackoutQuery);
@@ -101,12 +101,12 @@ class DeliveryWindowService {
         };
       }
 
-      // Check if date is blackout
+      // Check if date is blackout (PostgreSQL syntax)
       const blackoutQuery = `
         SELECT COUNT(*) as count FROM blackout_dates
-        WHERE date($1) >= date(date_start) AND date($1) < date(date_end, '+1 day')
+        WHERE $1::date >= date_start::date AND $1::date <= date_end::date
       `;
-      const blackoutResult = await pool.query(blackoutQuery, [requested]);
+      const blackoutResult = await pool.query(blackoutQuery, [requestedDate]);
 
       if (blackoutResult.rows[0].count > 0) {
         return {
