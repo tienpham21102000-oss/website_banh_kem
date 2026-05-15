@@ -389,7 +389,7 @@ class OrderService {
       const totalRevenueQuery = "SELECT SUM(total_amount) as total FROM orders WHERE status = 'paid'";
       const totalOrdersQuery = "SELECT COUNT(*) as count FROM orders";
       const pendingOrdersQuery = "SELECT COUNT(*) as count FROM orders WHERE status = 'pending'";
-      const todayRevenueQuery = "SELECT SUM(total_amount) as total FROM orders WHERE status = 'paid' AND date(created_at) = date('now')";
+      const todayRevenueQuery = "SELECT SUM(total_amount) as total FROM orders WHERE status = 'paid' AND created_at::date = CURRENT_DATE";
       
       const [revRes, countRes, pendingRes, todayRes] = await Promise.all([
         pool.query(totalRevenueQuery),

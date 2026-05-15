@@ -12,8 +12,8 @@ class CouponService {
       const query = `
         SELECT * FROM coupons
         WHERE code = $1 AND status = 'active'
-        AND datetime(valid_from) <= datetime('now')
-        AND datetime(valid_until) >= datetime('now')
+        AND valid_from <= NOW()
+        AND valid_until >= NOW()
       `;
 
       logger.info(`Validating coupon: ${code.toUpperCase()} at ${new Date().toISOString()}`);
