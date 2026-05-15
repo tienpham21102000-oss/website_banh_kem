@@ -7,6 +7,10 @@ const logger = require('../utils/logger');
 
 const router = express.Router();
 
+// Deduplication guard: each Facebook authorization code may only be used once.
+// A Set keyed by the code value; entries are cleaned up after 2 minutes.
+const _processedOAuthCodes = new Set();
+
 function ensureFacebookConfigured(req, res, next) {
   const fbStrategy = passport?._strategies?.facebook;
   if (!fbStrategy) {
@@ -38,28 +42,45 @@ router.get('/facebook', ensureFacebookConfigured, (req, res, next) => {
 router.get(
   '/facebook/callback',
   function facebookErrorHandler(req, res, next) {
-    // If there's already an error parameter (from a previous failed attempt),
-    // skip passport and redirect to frontend with the error
+    // If Facebook returned an error (e.g. user denied permissions)
     if (req.query.error) {
       return res.redirect('/?error=' + encodeURIComponent(req.query.error));
     }
-    // Skip passport authenticate if there's no code (e.g. direct browser access)
+    // No code means direct browser access — nothing to process
     if (!req.query.code) {
       return res.redirect('/?error=no_authorization_code');
     }
+    // Deduplication: reject a code that has already been submitted.
+    // This prevents the "authorization code has been used" error that occurs
+    // when the strategy verify callback is invoked more than once for the same
+    // code (e.g. due to session middleware or concurrent browser requests).
+    const code = req.query.code;
+    if (_processedOAuthCodes.has(code)) {
+      logger.warn('Facebook OAuth: duplicate authorization code detected, ignoring second request');
+      return res.redirect('/?error=' + encodeURIComponent('Phiên đăng nhập đã xử lý, vui lòng thử lại'));
+    }
+    _processedOAuthCodes.add(code);
+    setTimeout(() => _processedOAuthCodes.delete(code), 2 * 60 * 1000); // clean up after 2 min
     next();
   },
   ensureFacebookConfigured,
   function facebookCallbackHandler(req, res, next) {
-    passport.authenticate('facebook', {
-      failureRedirect: '/?error=facebook_auth_failed',
-    })(req, res, function(err) {
+    // Use the proper custom-callback form of passport.authenticate so passport
+    // does NOT call req.logIn / serialize the user into the session (we use JWT).
+    // Passing { session: false } AND a custom callback prevents the hybrid usage
+    // pattern that can trigger the strategy's verify callback twice.
+    passport.authenticate('facebook', { session: false }, function(err, user, info) {
       if (err) {
         logger.error(`Facebook auth error: ${err.message}, stack: ${err.stack}`);
         return res.redirect('/?error=' + encodeURIComponent(err.message));
       }
+      if (!user) {
+        logger.warn('Facebook auth: no user returned', info);
+        return res.redirect('/?error=facebook_auth_failed');
+      }
+      req.user = user;
       OAuthController.facebookCallback(req, res, next);
-    });
+    })(req, res, next);
   },
 );
 
