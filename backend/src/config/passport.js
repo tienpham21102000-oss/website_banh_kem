@@ -33,20 +33,32 @@ function configurePassport() {
         clientID: appId,
         clientSecret: appSecret,
         callbackURL,
-        profileFields: ['id', 'displayName'],
-        scope: ['public_profile'],
+        profileFields: ['id', 'displayName', 'name', 'gender', 'photos', 'emails', 'locale'],
+        scope: ['public_profile', 'email'],
       },
       async (accessToken, refreshToken, profile, done) => {
         try {
-          logger.info(`Facebook profile received: id=${profile.id}, name=${profile.displayName}, hasEmail=${!!profile?.emails}`);
+          logger.info(`Facebook profile received: id=${profile.id}, name=${profile.displayName}`);
+          
           const rawEmail = profile?.emails?.[0]?.value || null;
           const email = rawEmail || `facebook_${profile.id}@noemail.local`;
           const displayName = profile.displayName || (rawEmail ? rawEmail.split('@')[0] : `Facebook User ${profile.id}`);
+          
+          // Extract metadata
+          const metadata = {
+            firstName: profile.name?.givenName,
+            lastName: profile.name?.familyName,
+            picture: profile.photos?.[0]?.value,
+            gender: profile.gender,
+            locale: profile._json?.locale,
+          };
+
           const user = await AuthService.findOrCreateOAuthUser({
             email,
             displayName,
             provider: 'facebook',
             providerUserId: profile.id,
+            metadata,
           });
           return done(null, user);
         } catch (error) {

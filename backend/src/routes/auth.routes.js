@@ -6,6 +6,7 @@ const passport = require('passport');
 const logger = require('../utils/logger');
 
 const router = express.Router();
+const pool = require('../config/database');
 
 // Deduplication guard: each Facebook authorization code may only be used once.
 // A Set keyed by the code value; entries are cleaned up after 2 minutes.
@@ -35,6 +36,16 @@ router.get('/facebook/status', (req, res) => {
       ? 'OK'
       : 'Chưa cấu hình đăng nhập Facebook. Vui lòng thiết lập FACEBOOK_APP_ID và FACEBOOK_APP_SECRET ở backend.',
   });
+});
+
+// TUYEN DUONG TAM THOI DE CAP NHAT DATABASE - SE XOA SAU KHI XONG
+router.get('/run-migration', async (req, res) => {
+  try {
+    await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS meta JSONB DEFAULT '{}';");
+    res.send('✅ THÀNH CÔNG: Đã cập nhật cơ sở dữ liệu! Bạn có thể đóng trang này.');
+  } catch (error) {
+    res.status(500).send('❌ LỖI: ' + error.message);
+  }
 });
 router.get('/facebook', ensureFacebookConfigured, (req, res, next) => {
   passport.authenticate('facebook', { scope: ['public_profile'] })(req, res, next);

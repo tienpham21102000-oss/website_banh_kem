@@ -85,6 +85,13 @@ export default function OrderHistory({ session }) {
               }}>
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    {order.customer_meta?.picture && (
+                      <img 
+                        src={order.customer_meta.picture} 
+                        alt="FB" 
+                        style={{ width: '32px', height: '32px', borderRadius: '50%', border: '1px solid var(--border-subtle)' }} 
+                      />
+                    )}
                     <h3 style={{ margin: 0, fontSize: '1.4rem', fontFamily: 'var(--font-heading)' }}>Đơn hàng #{order.order_number}</h3>
                     <span style={{ 
                       padding: '4px 12px', 
@@ -99,7 +106,8 @@ export default function OrderHistory({ session }) {
                     </span>
                   </div>
                   <p style={{ marginTop: '6px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                    Đặt lúc: {new Date(order.created_at).toLocaleString('vi-VN')}
+                    {order.customer_meta ? `Chào ${order.customer_meta.firstName || 'bạn'}, đặt lúc: ` : 'Đặt lúc: '}
+                    {new Date(order.created_at).toLocaleString('vi-VN')}
                   </p>
                 </div>
                 <div style={{ textAlign: 'right' }}>

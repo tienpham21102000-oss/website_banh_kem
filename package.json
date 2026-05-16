@@ -9,5 +9,8 @@
     "build:frontend": "npm run build --prefix frontend",
     "start": "cd backend && npm start",
     "deploy": "npm run install:all && npm run build:frontend && npm run start"
+  },
+  "dependencies": {
+    "pg": "^8.20.0"
   }
 }

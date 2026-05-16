@@ -187,14 +187,21 @@ class AuthService {
    * Find or create a user from an OAuth provider (Facebook/Google/etc.)
    * Notes:
    * - We keep schema unchanged by using email as primary lookup key.
-   * - password_hash can be NULL for OAuth users.
+   * -  /**
+   * Find or create a user from an OAuth provider (Facebook/Google/etc.)
+   * @param {Object} params
+   * @param {string} params.email
+   * @param {string} params.displayName
+   * @param {string} params.provider
+   * @param {string} params.providerUserId
+   * @param {Object} params.metadata
    */
-  async findOrCreateOAuthUser({ email, displayName, provider, providerUserId }) {
+  async findOrCreateOAuthUser({ email, displayName, provider, providerUserId, metadata = {} }) {
     try {
       // 1) Prefer mapping by provider identity (stable, doesn't depend on email permission)
       const byProvider = await pool.query(
         `
-          SELECT u.id, u.email, u.phone, u.display_name, u.verified_email, u.verified_phone
+          SELECT u.id, u.email, u.phone, u.display_name, u.verified_email, u.verified_phone, u.meta
           FROM oauth_accounts oa
           JOIN users u ON u.id = oa.user_id
           WHERE oa.provider = $1 AND oa.provider_user_id = $2
@@ -205,6 +212,13 @@ class AuthService {
 
       if (byProvider.rows.length > 0) {
         const user = byProvider.rows[0];
+        // Update meta on every login so FB avatar/name stays fresh
+        if (metadata && Object.keys(metadata).length > 0) {
+          await pool.query(
+            'UPDATE users SET meta = $1, updated_at = NOW() WHERE id = $2',
+            [JSON.stringify(metadata), user.id],
+          );
+        }
         return {
           id: user.id,
           email: user.email,
@@ -214,13 +228,14 @@ class AuthService {
           verifiedPhone: user.verified_phone,
           provider,
           providerUserId,
+          meta: metadata || user.meta,
         };
       }
 
       // 2) If we got a real email, try linking to an existing user by email
       if (email) {
         const existingByEmail = await pool.query(
-          'SELECT id, email, phone, display_name, verified_email, verified_phone FROM users WHERE email = $1 LIMIT 1',
+          'SELECT id, email, phone, display_name, verified_email, verified_phone, meta FROM users WHERE email = $1 LIMIT 1',
           [email],
         );
 
@@ -234,7 +249,13 @@ class AuthService {
             `,
             [uuidv4(), provider, providerUserId, user.id],
           );
-
+          // Also save FB metadata for users previously registered by email
+          if (metadata && Object.keys(metadata).length > 0) {
+            await pool.query(
+              'UPDATE users SET meta = $1, updated_at = NOW() WHERE id = $2',
+              [JSON.stringify(metadata), user.id],
+            );
+          }
           return {
             id: user.id,
             email: user.email,
@@ -244,6 +265,7 @@ class AuthService {
             verifiedPhone: user.verified_phone,
             provider,
             providerUserId,
+            meta: metadata || user.meta,
           };
         }
       }
@@ -251,14 +273,22 @@ class AuthService {
       // 3) Create new user and link oauth identity
       const userId = uuidv4();
       const query = `
-        INSERT INTO users (id, email, phone, password_hash, display_name, verified_email)
-        VALUES ($1, $2, $3, $4, $5, $6)
+        INSERT INTO users (id, email, phone, password_hash, display_name, verified_email, meta)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
       `;
 
       const finalEmail = email || `${provider}_${providerUserId}@noemail.local`;
       const finalDisplayName = displayName || (finalEmail ? finalEmail.split('@')[0] : 'Khách hàng');
 
-      await pool.query(query, [userId, finalEmail, null, null, finalDisplayName, email ? true : false]);
+      await pool.query(query, [
+        userId, 
+        finalEmail, 
+        null, 
+        null, 
+        finalDisplayName, 
+        email ? true : false,
+        JSON.stringify(metadata)
+      ]);
 
       await pool.query(
         `
@@ -270,7 +300,7 @@ class AuthService {
       );
 
       const created = await pool.query(
-        'SELECT id, email, phone, display_name, verified_email, verified_phone FROM users WHERE id = $1',
+        'SELECT id, email, phone, display_name, verified_email, verified_phone, meta FROM users WHERE id = $1',
         [userId],
       );
 
@@ -283,6 +313,7 @@ class AuthService {
         verifiedPhone: created.rows[0].verified_phone,
         provider,
         providerUserId,
+        meta: created.rows[0].meta,
       };
     } catch (error) {
       logger.error('AuthService.findOrCreateOAuthUser error:', error);

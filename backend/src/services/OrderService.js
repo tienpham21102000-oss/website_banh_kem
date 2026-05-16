@@ -148,7 +148,18 @@ class OrderService {
    */
   async getOrderById(orderId) {
     try {
-      const orderQuery = 'SELECT * FROM orders WHERE id = $1';
+      const orderQuery = `
+        SELECT o.*,
+               u.display_name as customer_name,
+               u.email as customer_email,
+               u.meta as customer_meta,
+               oa.provider as oauth_provider,
+               oa.provider_user_id as fb_user_id
+        FROM orders o
+        LEFT JOIN users u ON o.user_id = u.id
+        LEFT JOIN oauth_accounts oa ON oa.user_id = u.id AND oa.provider = 'facebook'
+        WHERE o.id = $1
+      `;
       const orderResult = await pool.query(orderQuery, [orderId]);
 
       if (orderResult.rows.length === 0) {
@@ -335,7 +346,12 @@ class OrderService {
     try {
       const { status, startDate, endDate, limit = 50, offset = 0 } = filters;
 
-      let query = 'SELECT * FROM orders WHERE 1=1';
+      let query = `
+        SELECT o.*, u.display_name as customer_name, u.email as customer_email, u.meta as customer_meta
+        FROM orders o
+        LEFT JOIN users u ON o.user_id = u.id
+        WHERE 1=1
+      `;
       const params = [];
       let paramCount = 1;
 
