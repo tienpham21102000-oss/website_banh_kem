@@ -167,7 +167,7 @@ function FbInfoCard({ order }) {
         {/* View Profile */}
         {fbUserId && (
           <a
-            href={`https://facebook.com/${fbUserId}`}
+            href={`https://www.facebook.com/profile.php?id=${fbUserId}`}
             target="_blank"
             rel="noopener noreferrer"
             style={{
